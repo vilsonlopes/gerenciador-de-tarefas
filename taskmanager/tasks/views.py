@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import date
 
 from django.http import (
@@ -9,7 +10,7 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.template import loader
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
@@ -55,7 +56,26 @@ class TaskDeleteView(DeleteView):
 
 
 def task_home(request):
-    return redirect(reverse("tasks:task-list"))
+    # Obter todas as tarefas de uma só vez
+    tasks = Task.objects.filter(
+        status__in=["UNASSIGNED", "IN_PROGRESS", "DONE", "ARCHIVED"]
+    )
+
+    # Inicializar dicionários para manter as tarefas por status
+    context = defaultdict(list)
+
+    # Categorizar as tarefas em suas respectivas listas
+    for task in tasks:
+        if task.status == "UNASSIGNED":
+            context["unassigned_tasks"].append(task)
+        elif task.status == "IN_PROGRESS":
+            context["in_progress_tasks"].append(task)
+        elif task.status == "DONE":
+            context["done_tasks"].append(task)
+        elif task.status == "ARCHIVED":
+            context["archived_tasks"].append(task)
+
+    return render(request, "tasks/home.html", context)
 
 
 def task_by_date(request: HttpRequest, by_date: date) -> HttpResponse:
@@ -64,19 +84,6 @@ def task_by_date(request: HttpRequest, by_date: date) -> HttpResponse:
     context = {"tasks": tasks}  # dados a serem injetados no template
     html = template.render(context, request)
     return HttpResponse(html)
-
-
-def check_task(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        task_id = request.POST.get("task_id")
-        if services.check_task(task_id):
-            return HttpResponseRedirect(reverse("success"))
-        if task_id:
-            return HttpResponseRedirect(reverse("success"))
-        else:
-            return render(request, "add_task_to_sprint.html", {"error": "Task ID is requerid."})
-    else:
-        return render(request, "check_task.html")
 
 
 def create_task_on_sprint(request: HttpRequest, sprint_id: int) -> HttpResponseRedirect:
@@ -96,7 +103,7 @@ def create_task_on_sprint(request: HttpRequest, sprint_id: int) -> HttpResponseR
 def claim_task_view(request, task_id):
     user_id = (
         request.user.id
-    )  # Assuming you have access to the user ID from the request
+    )  # Supondo que você tenha acesso ao ID do usuário da solicitação
 
     try:
         services.claim_task(user_id, task_id)

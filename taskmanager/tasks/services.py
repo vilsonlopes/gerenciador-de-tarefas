@@ -63,7 +63,7 @@ def create_task_and_add_to_sprint(task_data: dict[str, str], sprint_id: int, cre
 
 
 @transaction.atomic
-def claim_task(user_id, task_id):
+def claim_task(user_id: int, task_id: int) -> None:
     # Bloquear a linha da tarefa para impedir que outras transações a utilizem simultaneamente
     task = Task.objects.select_for_update().get(id=task_id)
 

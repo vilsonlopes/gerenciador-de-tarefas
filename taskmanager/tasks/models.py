@@ -1,33 +1,44 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
 
-# Create your models here.
-class Task(models.Model):
+class VersionMixing:
+    version = models.IntegerField(default=0)
+
+
+class Task(models.Model, VersionMixing):
     STATUS_CHOICES = [
         ("UNASSIGNED", "Unassigned"),
         ("IN_PROGRESS", "In Progress"),
         ("DONE", "Completed"),
         ("ARCHIVED", "Archived"),
     ]
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=False, default="")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="UNASSIGNED",
-                              db_comment="Can be UNASSIGNED, IN_PROGRESS, DONE or ARCHIVED.",)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="UNASSIGNED",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    creator = models.ForeignKey(User, related_name="created_tasks", on_delete=models.CASCADE)
-    owner = models.ForeignKey(User, related_name="owned_tasks", on_delete=models.SET_NULL, null=True,
-                              db_comment="Foreign Key to the User who currently owns the task.",)
+    creator = models.ForeignKey(
+        User, related_name="created_tasks", on_delete=models.CASCADE
+    )
+    owner = models.ForeignKey(
+        User, related_name="owned_tasks", on_delete=models.SET_NULL, null=True
+    )
+    version = models.IntegerField(default=0)
 
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(status='UNASSIGNED')
-                | models.Q(status='IN_PROGRESS')
-                | models.Q(status='DONE')
-                | models.Q(status='ARCHIVED'),
-                name='status_check',
+                check=models.Q(status="UNASSIGNED")
+                | models.Q(status="IN_PROGRESS")
+                | models.Q(status="DONE")
+                | models.Q(status="ARCHIVED"),
+                name="status_check",
             ),
         ]
 
@@ -37,8 +48,12 @@ class Epic(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    creator = models.ForeignKey(User, related_name="created_epics", on_delete=models.CASCADE)
+    creator = models.ForeignKey(
+        User, related_name="created_epics", on_delete=models.CASCADE
+    )
     tasks = models.ManyToManyField("Task", related_name="epics", blank=True)
+    # Esse campo pode ser usado para indicar o progresso do épico
+    completion_status = models.FloatField(default=0.0)
 
 
 class Sprint(models.Model):
@@ -48,11 +63,19 @@ class Sprint(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    creator = models.ForeignKey(User, related_name="created_sprints", on_delete=models.CASCADE)
-    tasks = models.ManyToManyField(Task, related_name='sprints', blank=True)
-    epic = models.ForeignKey(Epic, related_name="sprints", on_delete=models.CASCADE, null=True, blank=True)
+    creator = models.ForeignKey(
+        User, related_name="created_sprints", on_delete=models.CASCADE
+    )
+    tasks = models.ManyToManyField("Task", related_name="sprints", blank=True)
+    # O épico para o qual este sprint está contribuindo
+    epic = models.ForeignKey(
+        Epic, related_name="sprints", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     class Meta:
         constraints = [
-            models.CheckConstraint(check=models.Q(end_date__gt=models.F('start_date')), name='end_date_after_start_date'),
+            models.CheckConstraint(
+                check=models.Q(end_date__gt=models.F("start_date")),
+                name="end_date_after_start_date",
+            ),
         ]
