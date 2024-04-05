@@ -13,8 +13,10 @@ from django.template import loader
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic import FormView
 
 from . import services
+from .forms import TaskForm, ContactForm
 from .mixins import SprintTaskMixin
 from .models import Task
 
@@ -34,7 +36,7 @@ class TaskDetailView(DetailView):
 class TaskCreateView(CreateView):
     model = Task
     template_name = "tasks/task_form.html"
-    fields = ("title", "description")
+    form_class = TaskForm
 
     def get_success_url(self):
         return reverse_lazy("tasks:task-detail", kwargs={"pk": self.object.id})
@@ -116,3 +118,16 @@ def claim_task_view(request, task_id):
 
 def custom_404(request, exception):
     return render(request, "404.html", {}, status=404)
+
+
+class ContactFormView(FormView):
+    template_name = "tasks/contact_form.html"
+    form_class = ContactForm
+    success_url = reverse_lazy("tasks:contact-success")
+
+    def form_valid(self, form):
+        subject = form.cleaned_data.get("subject")
+        message = form.cleaned_data.get("message")
+        from_email = form.cleaned_data.get("from_email")
+        services.send_contact_email(subject, message, from_email, ['your-email@example.com'])
+        return super().form_valid(form)

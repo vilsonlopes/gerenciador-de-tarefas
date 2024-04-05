@@ -31,6 +31,9 @@ class Task(models.Model, VersionMixing):
     )
     version = models.IntegerField(default=0)
 
+    file_upload = models.FileField(upload_to="tasks/files", null=True, blank=True)
+    image_upload = models.ImageField(upload_to="tasks/images", null=True, blank=True)
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -79,3 +82,8 @@ class Sprint(models.Model):
                 name="end_date_after_start_date",
             ),
         ]
+
+
+class SubscribeEmail(models.Model):
+    email = models.EmailField()
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="watchers")

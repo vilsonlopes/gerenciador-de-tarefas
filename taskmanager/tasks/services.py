@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import F
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
 
 from .models import Sprint, Task
 
@@ -104,3 +105,7 @@ def claim_task_optimistically(user_id: int, task_id: int) -> None:
 
     except Task.DoesNotExist:
         raise ValidationError("A tarefa não existe.")
+
+
+def send_contact_email(subject: str, message: str, from_email: str, to_email: str) -> None:
+    send_mail(subject, message, from_email, [to_email])

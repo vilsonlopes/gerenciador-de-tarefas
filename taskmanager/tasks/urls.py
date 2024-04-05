@@ -1,5 +1,7 @@
 from django.urls import path, register_converter
 from django.views.generic import TemplateView
+from django.conf import settings
+from django.conf.urls.static import static
 
 from . import converters
 from .views import (
@@ -11,6 +13,7 @@ from .views import (
     create_task_on_sprint,
     task_by_date,
     task_home,
+    ContactFormView,
 )
 
 app_name = "tasks"
@@ -29,4 +32,8 @@ urlpatterns = [
     path("tasks/<int:pk>/delete/", TaskDeleteView.as_view(), name="task-delete"),  # DELETE
     path("tasks/<yyyymmdd:date>/", task_by_date, name="task-get-by-date"),
     path("tasks/sprint/add_task/<int:pk>/", create_task_on_sprint, name="task-add-to-sprint",),
+    path("contact/", ContactFormView.as_view(), name="contact"),
+    path("contact-success/", TemplateView.as_view(template_name="contact_success.html"), name="contact-success",),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
