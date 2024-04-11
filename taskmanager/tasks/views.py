@@ -16,7 +16,7 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic import FormView
 
 from . import services
-from .forms import TaskForm, ContactForm
+from .forms import TaskForm, ContactForm, EpicFormSet
 from .mixins import SprintTaskMixin
 from .models import Task
 
@@ -131,3 +131,19 @@ class ContactFormView(FormView):
         from_email = form.cleaned_data.get("from_email")
         services.send_contact_email(subject, message, from_email, ['your-email@example.com'])
         return super().form_valid(form)
+
+
+def manage_epic_tasks(request, epic_pk):
+    epic = services.get_epic_by_id(epic_pk)
+    if not epic:
+        raise Http404("Epic não existe.")
+    if request.method == "POST":
+        formset = EpicFormSet(request.POST, queryset=services.get_tasks_for_epic(epic))       
+        if formset.is_valid():
+            tasks = formset.save(commit=False)
+            services.save_tasks_form_epic(epic, tasks)
+            formset.save_m2m()
+            return redirect('tasks:task-list')
+    else:
+        formset = EpicFormSet(queryset=services.get_tasks_for_epic(epic))       
+    return render(request, 'tasks/manage.epic.html', {'formset': formset, 'epic': epic})

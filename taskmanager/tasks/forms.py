@@ -1,4 +1,5 @@
 from django import forms
+from django.forms import modelformset_factory
 from .fields import EmailsListField
 
 from .models import Task, SubscribeEmail
@@ -32,3 +33,6 @@ class ContactForm(forms.Form):
     from_email = forms.EmailField(required=True)
     subject = forms.CharField(required=True)
     message = forms.CharField(widget=forms.Textarea, required=True)
+
+
+EpicFormSet = modelformset_factory(Task, form=TaskForm, extra=0)
