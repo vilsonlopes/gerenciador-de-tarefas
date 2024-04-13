@@ -136,14 +136,15 @@ class ContactFormView(FormView):
 def manage_epic_tasks(request, epic_pk):
     epic = services.get_epic_by_id(epic_pk)
     if not epic:
-        raise Http404("Epic não existe.")
+        raise Http404("Epic does not exist")
     if request.method == "POST":
-        formset = EpicFormSet(request.POST, queryset=services.get_tasks_for_epic(epic))       
+        formset = EpicFormSet(request.POST, queryset=services.get_tasks_for_epic(epic))
         if formset.is_valid():
             tasks = formset.save(commit=False)
-            services.save_tasks_form_epic(epic, tasks)
-            formset.save_m2m()
-            return redirect('tasks:task-list')
+            services.save_tasks_for_epic(epic, tasks)
+            formset.save_m2m()  # lidar com relações muitos-para-muitos se houver alguma
+            return redirect("tasks:task-list")
     else:
-        formset = EpicFormSet(queryset=services.get_tasks_for_epic(epic))       
-    return render(request, 'tasks/manage.epic.html', {'formset': formset, 'epic': epic})
+        formset = EpicFormSet(queryset=services.get_tasks_for_epic(epic))
+
+    return render(request, "tasks/manage_epic.html", {"formset": formset, "epic": epic})

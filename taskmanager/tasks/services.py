@@ -9,7 +9,7 @@ from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 
-from .models import Sprint, Task
+from .models import Sprint, Task, Epic
 
 
 class TaskAlreadyClaimedException(Exception):
@@ -109,3 +109,17 @@ def claim_task_optimistically(user_id: int, task_id: int) -> None:
 
 def send_contact_email(subject: str, message: str, from_email: str, to_email: str) -> None:
     send_mail(subject, message, from_email, [to_email])
+
+
+def get_epic_by_id(epic_id: int) -> Epic | None:
+    return Epic.objects.filter(pk=epic_id).first()
+
+
+def get_tasks_for_epic(epic: Epic) -> list[Task]:
+    return Task.objects.filter(epics=epic)
+
+
+def save_tasks_for_epic(epic: Epic, tasks: list[Task]) -> None:
+    for task in tasks:
+        task.save()
+        task.epics.add(epic)

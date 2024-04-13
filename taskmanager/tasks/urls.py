@@ -11,6 +11,7 @@ from .views import (
     TaskListView,
     TaskUpdateView,
     create_task_on_sprint,
+    manage_epic_tasks,
     task_by_date,
     task_home,
     ContactFormView,
@@ -34,6 +35,7 @@ urlpatterns = [
     path("tasks/sprint/add_task/<int:pk>/", create_task_on_sprint, name="task-add-to-sprint",),
     path("contact/", ContactFormView.as_view(), name="contact"),
     path("contact-success/", TemplateView.as_view(template_name="contact_success.html"), name="contact-success",),
+    path("epic/<int:epic_pk>/", manage_epic_tasks, name="task-batch-create"),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
